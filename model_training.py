@@ -36,10 +36,14 @@ dataset = DogBreedDataset(root_dir='/Users/pruthvipatel/Documents/projects/dog_b
 train_size = int(0.8 * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+print(f"Number of training samples: {len(train_dataset)}")
+print(f"Number of validation samples: {len(val_dataset)}")
 
 # Create training and validation dataloaders
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
-val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False, num_workers=4)
+train_loader = DataLoader(train_dataset, batch_size=70, shuffle=True, num_workers=4)
+val_loader = DataLoader(val_dataset, batch_size=70, shuffle=False, num_workers=4)
+print(f"Number of training batches: {len(train_loader)}")
+print(f"Number of validation batches: {len(val_loader)}")
 
 # Using pre-trained ResNet model
 model = models.resnet50(pretrained=True)
@@ -50,6 +54,7 @@ for param in model.parameters():
 
 # Modify the final classification layer for the number of dog breeds
 num_classes = len(dataset.classes)
+
 # Access final fully-connected layer
 # Replacing the last layer of pre-trained classes with the classes of dog breeds
 model.fc = nn.Linear(model.fc.in_features, num_classes)
@@ -61,53 +66,91 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # Move model to GPU if available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cpu" 
 model.to(device)
+
 
 # Print model summary
 # summary(model, input_size=(3, 224, 224))
 
+num_batches = len(train_loader)
+batch_size = train_loader.batch_size
+total_samples = num_batches * batch_size
+print(f"Number of samples: {total_samples}")
+print(f"Number of batches: {num_batches}")
+print(f"Batch size: {batch_size}")
+
+# for val loder
+num_batches = len(val_loader)
+batch_size = val_loader.batch_size
+total_samples = num_batches * batch_size
+print(f"Number of samples in val: {total_samples}")
+print(f"Number of batches in val : {num_batches}")
+print(f"Batch size of val: {batch_size}")
+
 # Train the model
-# num_epochs = 3
-# # for epoch in range(num_epochs):
-#     print("--------------EPOCH---------------------", epoch)
-#     model.train()
-#     print("--------------TRAIN---------------------")
-#     for inputs, labels in train_loader:
-#         print("--------------FOR---------------------")
-#         inputs, labels = inputs.to(device), labels.to(device)
+if __name__ == '__main__':
+    num_epochs = 1  # Set the total number of desired epochs
+    iteration_count = 0
+    evaluation_count = 0
+    save_interval = 1
+    start_epoch = 0
 
-#         # Clears the gradients of all optimized parameters.
-#         optimizer.zero_grad()
-#         # Performs a forward pass to get the model predictions.
-#         outputs = model(inputs)
-#         # Calculates the loss based on the actual and predicted values.
-#         loss = criterion(outputs, labels)
-#         # Performs a backward pass to calculate the gradients.
-#         loss.backward()
-#         # Updates the parameters.
-#         optimizer.step()
+    # # Optionally, load the model from a checkpoint if available
+    # checkpoint_path = '/Users/pruthvipatel/Documents/projects/dog_breed_classification/model_checkpoint_epoch_1.pth'  # Update with the correct checkpoint path
+    # if checkpoint_path:
+    #     checkpoint = torch.load(checkpoint_path)
+    #     model.load_state_dict(checkpoint['model_state_dict'])
+    #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    #     iteration_count = checkpoint['iteration_count']
+    #     evaluation_count = checkpoint['evaluation_count']
+    #     start_epoch = checkpoint['epoch'] + 1  # Start from the next epoch
+    #     print(f"Loaded checkpoint from epoch {checkpoint['epoch']}. Resuming training from epoch {start_epoch}")
 
-#     # Validation
-#     model.eval()
-#     total_correct = 0
-#     total_samples = 0
-#     with torch.no_grad():
-#         for inputs, labels in val_loader:
-#             inputs, labels = inputs.to(device), labels.to(device)
-#             outputs = model(inputs)
-#             _, predicted = torch.max(outputs, 1)
-#             total_samples += labels.size(0)
-#             total_correct += (predicted == labels).sum().item()
+    for epoch in range(start_epoch, start_epoch + num_epochs):
+        print("--------------EPOCH---------------------", epoch)
+        model.train()
+        print("--------------Starting TRAINing---------------------")
 
-#     accuracy = total_correct / total_samples
-#     print(f'Epoch [{epoch+1}/{num_epochs}], Validation Accuracy: {accuracy:.4f}')
+        for inputs, labels in train_loader:
+            print("--------------FOR---------------------", iteration_count)
+            inputs, labels = inputs.to(device), labels.to(device)
 
-num_epochs = 5
-for epoch in range(num_epochs):
-    for inputs, labels in train_loader:
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            iteration_count += 1
+
+        print("--------------Starting Validation---------------------")
+        model.eval()
+        total_correct = 0
+        total_samples = 0
+
+        with torch.no_grad():
+            for inputs, labels in val_loader:
+                print("--------------VAL---------------------", evaluation_count)
+                inputs, labels = inputs.to(device), labels.to(device)
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs, 1)
+                total_samples += labels.size(0)
+                total_correct += (predicted == labels).sum().item()
+                evaluation_count += 1
+
+        accuracy = total_correct / total_samples
+        print(f'Epoch [{epoch}/{start_epoch + num_epochs - 1}], Validation Accuracy: {accuracy:.4f}')
+
+        # Save the model periodically, for example, after each epoch
+        if (epoch + 1) % save_interval == 0:
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': loss,
+                'iteration_count': iteration_count,
+                'evaluation_count': evaluation_count,
+            }, f'model_checkpoint_epoch_{epoch + 1}.pth')
+
+# Save the trained model after training completes
+torch.save(model.state_dict(), 'dog_breed_model.pth')
