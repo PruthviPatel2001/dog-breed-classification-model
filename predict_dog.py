@@ -7,14 +7,14 @@ import matplotlib.pyplot as plt
 
 
 model = models.resnet50(pretrained=True)
-num_classes = 28  
+num_classes = len(distinct_breeds_list)  
 model.fc = nn.Linear(model.fc.in_features, num_classes)
 
 # Define the class labels
 classes =  distinct_breeds_list
 
 # Load the model from the checkpoint
-checkpoint_path = '/Users/pruthvipatel/Documents/projects/dog_breed_classification/model_checkpoint_epoch_1.pth'  # Update with the correct checkpoint path
+checkpoint_path = '/Users/pruthvipatel/Documents/projects/dog_breed_classification/model_checkpoint_epoch_2.pth'  # Update with the correct checkpoint path
 checkpoint = torch.load(checkpoint_path)
 model.load_state_dict(checkpoint['model_state_dict'])
 model.eval()
@@ -48,5 +48,5 @@ def predict_image_label(image_path, model, transform):
     plt.show()
 
 # Example usage
-image_path = '/Users/pruthvipatel/Documents/projects/dog_breed_classification/dataset/train/0ea78b024dc3955332d3ddb08b8e50f0.jpg'  # Replace with the path to your image
+image_path = '/Users/pruthvipatel/Documents/projects/dog_breed_classification/dataset/new_data/images/be575caa5b993cf44f40ac8193db9597.jpg'  # Replace with the path to your image
 predicted_label = predict_image_label(image_path, model, transform)

@@ -10,7 +10,7 @@ class DogBreedDataset(Dataset):
         self.classes = sorted(list(set(self.labels['breed'])))
         self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
 
-        # # Print class-to-index mapping
+        # Print class-to-index mapping
         # print("Class to Index Mapping:")
         # for cls, idx in self.class_to_idx.items():
         #     print(f"{cls}: {idx}")
@@ -20,7 +20,7 @@ class DogBreedDataset(Dataset):
     
     def __getitem__(self, idx):
         img_id = self.labels.iloc[idx, 0]
-        img_path = f'{self.root_dir}/train/{img_id}.jpg'
+        img_path = f'{self.root_dir}/new_data/images/{img_id}.jpg'
         image = Image.open(img_path).convert('RGB')
 
         if self.transform:
