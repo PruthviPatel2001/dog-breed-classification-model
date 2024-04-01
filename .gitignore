@@ -1,4 +1,4 @@
 /dataset
-/dog_breed_model.pth
+
 /*.pth
 !model_checkpoint_epoch_6.pth

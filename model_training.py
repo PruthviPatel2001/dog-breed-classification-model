@@ -13,12 +13,10 @@ import time
 from loadingdataset.index import DogBreedDataset
 from loadingdataset.test_custom_dataset.index import test_dog_breed_dataset
 
-# import ssl
-# ssl._create_default_https_context = ssl._create_unverified_context
+
 
 # Transforms images to tensors and normalizes them
-
-# preparing images for working with convolutional neural networks (CNNs). 
+# Preparing images for working with convolutional neural networks (CNNs). 
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)), # resize images to 224x224
@@ -28,22 +26,20 @@ transform = transforms.Compose([
 
   
 dataset = DogBreedDataset(root_dir='/Users/pruthvipatel/Documents/projects/dog_breed_classification/dataset', labels_file='/Users/pruthvipatel/Documents/projects/dog_breed_classification/dataset/labels.csv', transform=transform)
-print(len(dataset))
-# To preview a sample image from the dataset.
-# test_dog_breed_dataset(dataset)
 
 # Split the dataset into training and validation sets
 train_size = int(0.8 * len(dataset))
 val_size = len(dataset) - train_size
 train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
-# print(f"Number of training samples: {len(train_dataset)}")
-# print(f"Number of validation samples: {len(val_dataset)}")
+
 
 # Create training and validation dataloaders
+
+# Training Batch 
 train_loader = DataLoader(train_dataset, batch_size=70, shuffle=True, num_workers=4)
+
+# Validation Batch 
 val_loader = DataLoader(val_dataset, batch_size=70, shuffle=False, num_workers=4)
-# print(f"Number of training batches: {len(train_loader)}")
-# print(f"Number of validation batches: {len(val_loader)}")
 
 # Using pre-trained ResNet model
 model = models.resnet50(pretrained=True)
@@ -54,12 +50,13 @@ for param in model.parameters():
 
 # Modify the final classification layer for the number of dog breeds
 num_classes = len(dataset.classes)
-print("-----num_classes------",num_classes)
+
+
 # Access final fully-connected layer
 # Replacing the last layer of pre-trained classes with the classes of dog breeds
 model.fc = nn.Linear(model.fc.in_features, num_classes)
 
-# Define loss function and optimizer
+
 # Loss function : use to measure how well the model is performing ( how close the model's predictions are to the actual labels)
 # Optimizer : use to update the model parameters to minimize the loss function
 criterion = nn.CrossEntropyLoss()
@@ -69,26 +66,19 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 device = "cpu" 
 model.to(device)
 
-
-run_train_loop = True
-
+run_train_loop = False # Set to True to run the training loop
 if run_train_loop:
 
+    # For Training Batch
     num_batches = len(train_loader)
     batch_size = train_loader.batch_size
     total_samples = num_batches * batch_size
-    print(f"Number of samples: {total_samples}")
-    print(f"Number of batches: {num_batches}")
-    print(f"Batch size: {batch_size}")
 
-    # for val loder
+    # For Validation Batch
     num_batches = len(val_loader)
     batch_size = val_loader.batch_size
     total_samples = num_batches * batch_size
-    print(f"Number of samples in val: {total_samples}")
-    print(f"Number of batches in val : {num_batches}")
-    print(f"Batch size of val: {batch_size}")
-
+    
     # Train the model
     if __name__ == '__main__':
         num_epochs = 1  # Set the total number of desired epochs
@@ -97,24 +87,30 @@ if run_train_loop:
         save_interval = 1
         start_epoch = 0
 
-        # # Optionally, load the model from a checkpoint if available
-        checkpoint_path = '/Users/pruthvipatel/Documents/projects/dog_breed_classification/model_checkpoint_epoch_5.pth'  # Update with the correct checkpoint path
+        # Optionally, load the model from a checkpoint if available
+        checkpoint_path = '/Users/pruthvipatel/Documents/projects/dog_breed_classification/model_checkpoint_epoch_6.pth'  # Update with the correct checkpoint path
+       
         if checkpoint_path:
             checkpoint = torch.load(checkpoint_path)
+
             model.load_state_dict(checkpoint['model_state_dict'])
+
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
             iteration_count = checkpoint['iteration_count']
             evaluation_count = checkpoint['evaluation_count']
+
             start_epoch = checkpoint['epoch'] + 1  # Start from the next epoch
+            
             print(f"Loaded checkpoint from epoch {checkpoint['epoch']}. Resuming training from epoch {start_epoch}")
 
         for epoch in range(start_epoch, start_epoch + num_epochs):
-            print("--------------EPOCH---------------------", epoch)
+            print("--------------Epoch---------------------", epoch)
             model.train()
-            print("--------------Starting TRAINing---------------------")
+            print("--------------Starting Training---------------------")
 
             for inputs, labels in train_loader:
-                print("--------------FOR---------------------", iteration_count)
+                print("--------------Iteration---------------------", iteration_count)
                 inputs, labels = inputs.to(device), labels.to(device)
 
                 optimizer.zero_grad()
@@ -131,7 +127,7 @@ if run_train_loop:
 
             with torch.no_grad():
                 for inputs, labels in val_loader:
-                    print("--------------VAL---------------------", evaluation_count)
+                    print("--------------Validation---------------------", evaluation_count)
                     inputs, labels = inputs.to(device), labels.to(device)
                     outputs = model(inputs)
                     _, predicted = torch.max(outputs, 1)
@@ -142,7 +138,7 @@ if run_train_loop:
             accuracy = total_correct / total_samples
             print(f'Epoch [{epoch}/{start_epoch + num_epochs - 1}], Validation Accuracy: {accuracy:.4f}')
 
-            # Save the model periodically, for example, after each epoch
+            # Saving the model checkpoint
             if (epoch + 1) % save_interval == 0:
                 torch.save({
                     'epoch': epoch,
@@ -153,6 +149,7 @@ if run_train_loop:
                     'evaluation_count': evaluation_count,
                 }, f'model_checkpoint_epoch_{epoch + 1}.pth')
 
-    # Save the trained model after training completes
+    # Save the model
     torch.save(model.state_dict(), 'dog_breed_model.pth')
-    #last model accuracy 0.9754
+
+    #last model accuracy (model checkpoint 6) =  0.9754

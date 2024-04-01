@@ -11,4 +11,4 @@ distinct_breeds = df['breed'].unique()
 # Convert the result to a list if needed
 distinct_breeds_list = sorted(list(distinct_breeds))
 
-print(distinct_breeds_list[29])
+print(distinct_breeds_list)
