@@ -12,7 +12,7 @@ Welcome to the Dog Breed Classification Project! This project aims to accurately
 - Breeds Bonanza: Trained with love on 30 diverse breeds from across the globe.ation: Utilizes weather data to optimize plant care schedules.
 
 ## Technical Details
-- Framework: PyTorch, Python
+- Framework: PyTorch
 - Model Architecture: ResNet-50
 - Training Technique: Transfer Learning
 
